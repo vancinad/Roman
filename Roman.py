@@ -20,15 +20,12 @@ def getInput():
 
         if n == "":
             inputOK = True
-            break
-
-        try:
+        else:
             for letter in n:
-                v = romanVals[letter] #try retrieving a value with this key
-                #print(letter,"-->",romanVals[letter])
-            inputOK = True  #if the above loop completes, all numerals are valid
-        except:
-            print("\'",letter,"\' is no good. Use only valid roman numerals. Try again?") 
+                inputOK = letter in romanVals
+                if not inputOK:
+                    print("\'",letter,"\' is no good. Use only valid roman numerals. Try again?") 
+                    break
     
     return n
 # end: getInput()
