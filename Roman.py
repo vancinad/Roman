@@ -9,12 +9,32 @@ romanVals = {
     "I":1
 }
 
-inputMessage = "Enter a Roman Number to convert:"
-roman = input(inputMessage).upper()
-while roman != "":
+def getInput():
+    '''
+    Return a string that is empty contains valid Roman numerals
+    '''
+    inputOK = False
+    
+    while inputOK == False:
+        n = input("Enter a Roman Number to convert (Enter to exit):").upper()
 
-    # for letter in roman:
-    #     print(letter,"-->",romanVals[letter])
+        if n == "":
+            inputOK = True
+            break
+
+        try:
+            for letter in n:
+                v = romanVals[letter] #try retrieving a value with this key
+                #print(letter,"-->",romanVals[letter])
+            inputOK = True  #if the above loop completes, all numerals are valid
+        except:
+            print("\'",letter,"\' is no good. Use only valid roman numerals. Try again?") 
+    
+    return n
+# end: getInput()
+
+roman = getInput()
+while roman != "":
 
     rLen = len(roman)  
     val = 0
@@ -46,5 +66,5 @@ while roman != "":
 
     print (roman,"==>",val)
 
-    roman = input(inputMessage).upper()
+    roman = getInput()
 
