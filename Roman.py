@@ -13,9 +13,8 @@ inputMessage = "Enter a Roman Number to convert:"
 roman = input(inputMessage).upper()
 while roman != "":
 
-
-    for letter in roman:
-        print(letter,"-->",romanVals[letter])
+    # for letter in roman:
+    #     print(letter,"-->",romanVals[letter])
 
     rLen = len(roman)  
     val = 0
@@ -30,7 +29,7 @@ while roman != "":
         else:
             val -= v1
 
-        print("[",i,"] ", mode, " ", v1)
+        # print("[",i,"] ", mode, " ", v1)
         prevVal = romanVals[roman[i-1]]
         if prevVal > v1:
             mode = "add"
@@ -39,7 +38,7 @@ while roman != "":
 
     i=0
     v1 = romanVals[roman[i]]
-    print("[",i,"] ", mode, " ", v1) 
+    # print("[",i,"] ", mode, " ", v1) 
     if mode == "add":
         val += v1
     else:
