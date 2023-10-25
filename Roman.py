@@ -11,7 +11,7 @@ romanVals = {
 
 def getInput():
     '''
-    Return a string that is empty contains valid Roman numerals
+    Return a string that is empty or contains valid Roman numerals
     '''
     inputOK = False
     
