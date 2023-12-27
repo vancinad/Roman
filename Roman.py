@@ -1,4 +1,5 @@
 from enum import Enum
+from logging import log
 
 InputType = Enum('Input Type', ['ROMAN','ARABIC','EXIT'])
 
@@ -13,18 +14,34 @@ romanDigits = {
     "I":1
 }
 
-def onlyArabic(i):
+def isArabic(i):
     '''
     return boolean indicating only arabic numerals in i
     '''
-    return(i.isdecimal())
+    #TODO: try converting to int (int(i)) and catch error instead of the less direct isdecimal()
 
-def onlyRoman(e):
+    isArabic = False
+
+    try:
+        int(i)
+        isArabic = True
+    except:
+        pass
+
+    return(isArabic)
+
+def isRoman(e):
+    '''
+    return boolean indicating only roman digits in e
+    '''
+    isRoman = False
+    
     for letter in e:
-        inputOK = letter in romanDigits #confirm this character is a Roman 'digit'
-        if not inputOK:
-            break
-    return inputOK
+        isRoman = letter in romanDigits #confirm this character is a Roman 'digit'
+        if not isRoman:
+            break #first non-Roman digit forces exit
+
+    return isRoman
 
 def toArabic(roman):
     '''
@@ -59,6 +76,7 @@ def toArabic(roman):
         val -= v1
 
     return val
+    # end: toArabic()
 
 def toRoman(arabic):
     '''
@@ -90,38 +108,33 @@ def toRoman(arabic):
             roman+=add
             remaining -= i * romanDigits[r]
     return roman
+    #end: toRoman()
 
 def getInput():
     '''
     Return a dict with 'type':InputType, and 'value':entry
     '''
 
-    inputResult = {} # the dict to return
-
-    inputOK = False
+    inputResult = {'type':''}
     
-    while inputOK == False:
-        entry = input("Enter a Roman or Arabic number to convert (Enter to exit):").upper()
+    while type(inputResult['type']) is not InputType: #keep going until we get an ARABIC, ROMAN, or EXIT
 
-        if entry == "":
-            inputOK = True
+        #get user input
+        inputResult['value'] = input("Enter a Roman or Arabic number to convert (Enter to exit):").upper()
+
+        if inputResult['value'] == "":
             inputResult['type'] = InputType.EXIT
         else:
             # is input numeric?
-            numeric = onlyArabic(entry)
-            if numeric:
-                inputOK = True
+            if isArabic(inputResult['value']):
                 inputResult['type'] = InputType.ARABIC
-                inputResult['value'] = int(entry)
+                inputResult['value'] = int(inputResult['value']) #return value as integer
             else:
                 #check to see if it's a Roman number
-                roman = onlyRoman(entry)
-                if roman:
-                    inputOK = True
+                if isRoman(inputResult['value']):
                     inputResult['type'] = InputType.ROMAN
-                    inputResult['value'] = entry
                 else:
-                    print("\'",entry,"\' is no good. Use only valid roman numerals. Try again?") 
+                    print("\'",inputResult['value'],"\' is no good. Use only valid Roman or Arabic numerals. Try again?") 
     
     return inputResult
 
