@@ -1,5 +1,4 @@
 from enum import Enum
-from logging import log
 
 InputType = Enum('Input Type', ['ROMAN','ARABIC','EXIT'])
 
