@@ -1,4 +1,5 @@
 from enum import Enum
+import random
 
 InputType = Enum('Input Type', ['ROMAN','ARABIC','EXIT'])
 
@@ -44,41 +45,42 @@ def isRoman(e):
 
 def toArabic(roman):
     '''
-    Return Arabic value for roman string
-    '''            
-    rLen = len(roman)  
+    Alternate (simplified) method of converting
+    '''
     val = 0
-    mode = "add"
+    for i in range(0,len(roman)-1):
+        iVal = romanDigits[roman[i]]
 
-    for i in range(rLen-1, 0, -1):
-        rNumeral = roman[i]
-        v1 = romanDigits[rNumeral]
-        
-        if mode == "add":
-            val += v1
-        else:
-            val -= v1
+        #subtracting if nextVal is greater than iVal
+        nextVal = romanDigits[roman[i+1]]
+        sign = -1 if (nextVal > iVal) else 1
 
-        # print("[",i,"] ", mode, " ", v1)
-        prevVal = romanDigits[roman[i-1]]
-        if prevVal > v1:
-            mode = "add"
-        elif prevVal < v1:
-            mode = "sub"
+        val+=iVal*sign
 
-    i=0
-    v1 = romanDigits[roman[i]]
-    # print("[",i,"] ", mode, " ", v1) 
-    if mode == "add":
-        val += v1
-    else:
-        val -= v1
+    val+=romanDigits[roman[len(roman)-1]] #last is always added
 
     return val
+
     # end: toArabic()
 
-def toRoman(arabic):
+def optimizeRoman(r):
+    #TODO: implement this optimization
     '''
+    given an r of 4 Roman digits (e.g. 'CCCC') convert it to an optimized equivalent, e.g. 'CD'
+    '''
+    lastChar = r[-1]
+    firstChar = r[0]
+
+    rVal = toArabic(r)
+    
+    return r #Just return input value for now...
+
+    #end: optimizeRoman()
+
+def toRoman_top_down(arabic):
+    '''
+        Starting from the high digits...
+
         Given 1964...
         divide by 1000 ==> 1.964
         int ==> 1, add 1 'M' ==> "M"
@@ -99,22 +101,39 @@ def toRoman(arabic):
         for r in romanDigits:
             n = remaining / romanDigits[r]
             i = int(n)
-            f = "{{:{c}<{l}}}".format(c=r,l=i)
-            add = f.format('')
-            if len(add) > 3:
-                #too many sequential numerals (e.g. "CCCC" s/b "CD")
-                pass #TODO: implement this optimization
-            roman+=add
-            remaining -= i * romanDigits[r]
+            if i > 0:
+                #f = "{{:{c}<{l}}}".format(c=r,l=i)
+                #add = f.format('')
+                add = ''.ljust(i,r)
+                if i > 3:
+                    add = optimizeRoman(add)
+                    #too many sequential numerals (e.g. "CCCC" s/b "CD")
+                roman+=add
+                remaining -= i * romanDigits[r]
+                if remaining == 0: break
     return roman
-    #end: toRoman()
+    #end: toRoman_top_down()
+
+def toRoman(arabic):
+    roman = ""
+
+    a = str(arabic)[::-1] #reverse input digits and convert to str
+    exp = 0 #exponent
+    for c in a:
+        cVal = (int(c)*10**exp)
+        exp += 1
+        cRom = toRoman_top_down(cVal)
+        roman = cRom + roman
+
+    return roman
+    #end toRoman()
 
 def getInput():
     '''
     Return a dict with 'type':InputType, and 'value':entry
     '''
 
-    inputResult = {'type':''}
+    inputResult = {'type':None}
     
     while type(inputResult['type']) is not InputType: #keep going until we get an ARABIC, ROMAN, or EXIT
 
@@ -139,20 +158,54 @@ def getInput():
 
 # end: getInput()
 
+def doTest(testCount = 5):
+    '''
+    run some tests with fixed inputs
+    '''
+    tList = list() #test input list
+    rList = list() #result list
+
+    #generate test values
+    random.seed()
+    for x in range(0,testCount):
+        tList.append(random.randint(1,3999))
+    tList.sort()
+
+    print("Arabic to Roman tests:")
+    for t in tList:
+        r = toRoman(t)
+        rList.append(r)
+        print ("\tConverting {} ==> {}".format(t, toRoman(t)))
+
+    #tList[0] = tList[0]+1 #force a mismatch to test the test
+
+    #now convert the Romans back to Arabic and see if they match
+    print("Roman to Arabic tests:")
+    for x in range(0, len(rList)):
+        a = toArabic(rList[x])
+        m = f" !!! should be {tList[x]}" if a != tList[x] else " ok"
+        print ("\tTest {}: {} ==> {}{}".format(x+1, rList[x], a, m))
+
+def doUserInput():
+    inputResult = getInput()
+
+    while inputResult['type'] is not InputType.EXIT:
+
+        match inputResult['type']:
+            case InputType.ROMAN:
+                val = toArabic(inputResult['value'])
+                print (inputResult['value'],"==>",val)
+            case InputType.ARABIC:
+                val = toRoman(inputResult['value'])
+                print (inputResult['value'],"==>",val)
+            
+        inputResult = getInput()
+
+
 '''
 Mainline begins here
 '''
-inputResult = getInput()
 
-while inputResult['type'] is not InputType.EXIT:
-
-    match inputResult['type']:
-        case InputType.ROMAN:
-            val = toArabic(inputResult['value'])
-            print (inputResult['value'],"==>",val)
-        case InputType.ARABIC:
-            val = toRoman(inputResult['value'])
-            print (inputResult['value'],"==>",val)
-        
-    inputResult = getInput()
+doTest()
+#doUserInput() #do all the things
 
