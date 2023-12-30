@@ -13,20 +13,19 @@ romanDigits = {
     "V":5,
     "I":1
 }
+rDigitsKeysList = list(romanDigits.keys())
+rDigitsValsList = list(romanDigits.values())
 
 def isArabic(i):
     '''
-    return boolean indicating only arabic numerals in i
+    return boolean indicating input is an arabic integer
     '''
-    #TODO: try converting to int (int(i)) and catch error instead of the less direct isdecimal()
-
-    isArabic = False
 
     try:
         int(i)
         isArabic = True
     except:
-        pass
+        isArabic = False
 
     return(isArabic)
 
@@ -45,9 +44,9 @@ def isRoman(e):
 
 def toArabic(roman):
     '''
-    Alternate (simplified) method of converting
+    Convert roman to arabic
     '''
-    val = 0
+    arabic = 0
     for i in range(0,len(roman)-1):
         iVal = romanDigits[roman[i]]
 
@@ -55,29 +54,82 @@ def toArabic(roman):
         nextVal = romanDigits[roman[i+1]]
         sign = -1 if (nextVal > iVal) else 1
 
-        val+=iVal*sign
+        arabic+=iVal*sign
 
-    val+=romanDigits[roman[len(roman)-1]] #last is always added
+    arabic+=romanDigits[roman[len(roman)-1]] #last is always added
 
-    return val
+    return arabic
 
     # end: toArabic()
 
-def optimizeRoman(r):
-    #TODO: implement this optimization
+def toRoman(arabic):
     '''
-    given an r of 4 Roman digits (e.g. 'CCCC') convert it to an optimized equivalent, e.g. 'CD'
+    Build a solution by:
+    1) breaking the arabic number into its digit-value components
+    2) for each component:
+        a) look for a single-digit solution (e.g. 1000='M', 5='V')
+        b) look for a two-digit solution (e.g. 900='CM', 40='XL')
+        c) build a multi-digit solution (e.g. 8='VIII')
+    3) append each component solution to the complete solution until done
     '''
-    lastChar = r[-1]
-    firstChar = r[0]
 
-    rVal = toArabic(r)
-    
-    return r #Just return input value for now...
+    roman = "" #complete solution
 
-    #end: optimizeRoman()
+    breakdown = segmentedNumber(arabic) #get a list of arabic digit component values
+    for b in breakdown:
+        thisDigit='' #solution for this component
 
-def toRoman_top_down(arabic):
+        #find first roman value >= b -- the starting place for a one- or two- digit solution
+        xv1 = -1 
+        xr = range(len(rDigitsValsList)-1,-1,-1)
+        for x in xr: #walk backward through vals list
+            if rDigitsValsList[x] >= b: 
+                xv1 = x
+                break
+
+        if xv1 != -1:  # found a starting place
+            if rDigitsValsList[xv1] == b: #found single-digit solution, so...
+                thisDigit = rDigitsKeysList[xv1]
+            else:
+                # Look for a 2-digit solution
+                xv2 = -1  # position indicator for "subtract" digit
+                for x in range(len(rDigitsValsList)-1,xv1,-1):
+                    if rDigitsValsList[xv1] - rDigitsValsList[x] == b:
+                        xv2 = x  # Found a solution
+                        break
+                #concatenate the two characters
+                if xv2 != -1: 
+                    thisDigit = (rDigitsKeysList[xv2] +  # the 'subtract' digit 
+                        rDigitsKeysList[xv1])  # the 'add' digit
+        
+        if thisDigit == '':
+            # No single- or two-digit solution found
+            thisDigit = toRoman_multichar(b)
+
+        roman+=thisDigit
+
+    return roman
+
+    #end: toRoman()
+
+def segmentedNumber(given):
+    '''
+    return a list of numbers -- thousands, hundreds, tens, ones -- that add to n.
+    Example: 1999 ==> (1000, 900, 90, 9)
+    '''
+    rem = given
+    ret = list()
+    numDigits = len(str(given))
+    for e in range(numDigits-1, 0, -1):
+        div = 10**e
+        i = rem / div
+        n = div * int(i)
+        ret.append(n)
+        rem -= n
+    if rem > 0: ret.append(rem)
+    return ret
+
+def toRoman_multichar(arabic):
     '''
         Starting from the high digits...
 
@@ -94,7 +146,12 @@ def toRoman_top_down(arabic):
         divide by 'L'(50) ==> 1.nnn
         int==>1, add 1 'L' ==> "MDCCCCL"
         subtract 'L' ==> 14
+
+        Note that this function will produce invalid Roman numerals containing sequences
+        of more than three repeating Roman digits, as in the example above. It should only be used after
+        the possibility of two-digit "subtract" solutions (e.g. "CD" vs. "CCCC") has been eliminated.
     '''
+
     remaining = arabic
     roman = ""
     while remaining > 0:
@@ -102,33 +159,14 @@ def toRoman_top_down(arabic):
             n = remaining / romanDigits[r]
             i = int(n)
             if i > 0:
-                #f = "{{:{c}<{l}}}".format(c=r,l=i)
-                #add = f.format('')
                 add = ''.ljust(i,r)
-                if i > 3:
-                    add = optimizeRoman(add)
-                    #too many sequential numerals (e.g. "CCCC" s/b "CD")
                 roman+=add
                 remaining -= i * romanDigits[r]
                 if remaining == 0: break
     return roman
-    #end: toRoman_top_down()
+    #end: toRoman_multichar()
 
-def toRoman(arabic):
-    roman = ""
-
-    a = str(arabic)[::-1] #reverse input digits and convert to str
-    exp = 0 #exponent
-    for c in a:
-        cVal = (int(c)*10**exp)
-        exp += 1
-        cRom = toRoman_top_down(cVal)
-        roman = cRom + roman
-
-    return roman
-    #end toRoman()
-
-def getInput():
+def getUserInput():
     '''
     Return a dict with 'type':InputType, and 'value':entry
     '''
@@ -145,8 +183,11 @@ def getInput():
         else:
             # is input numeric?
             if isArabic(inputResult['value']):
-                inputResult['type'] = InputType.ARABIC
                 inputResult['value'] = int(inputResult['value']) #return value as integer
+                if inputResult['value'] <= 3999:
+                    inputResult['type'] = InputType.ARABIC
+                else:
+                    print("Number needs to be 3999 or less. Try again?")
             else:
                 #check to see if it's a Roman number
                 if isRoman(inputResult['value']):
@@ -158,36 +199,44 @@ def getInput():
 
 # end: getInput()
 
-def doTest(testCount = 5):
+def doTest(t = 5):
     '''
-    run some tests with fixed inputs
+    check the type of test data provided and run the appropriate test
     '''
-    tList = list() #test input list
-    rList = list() #result list
+    if isinstance(t,int):
+        doTest_int(t)
+    elif isinstance(t,list):
+        doTest_list(t)
+    else:
+        print("'doTest() doesn't know what to do with type '{}'".format(type(t)))
 
+def doTest_int(testCount = 5):
+    '''
+    Generate a list of random numbers and test
+    '''
     #generate test values
+    tList = list()
     random.seed()
     for x in range(0,testCount):
         tList.append(random.randint(1,3999))
     tList.sort()
+    doTest_list(tList)
 
-    print("Arabic to Roman tests:")
+def doTest_list(tList):
+    '''
+    run tests with given list of arabic numbers
+    '''
+    rList = list() #result list
+
+    print(f"Tests using {tList}:")
     for t in tList:
         r = toRoman(t)
-        rList.append(r)
-        print ("\tConverting {} ==> {}".format(t, toRoman(t)))
-
-    #tList[0] = tList[0]+1 #force a mismatch to test the test
-
-    #now convert the Romans back to Arabic and see if they match
-    print("Roman to Arabic tests:")
-    for x in range(0, len(rList)):
-        a = toArabic(rList[x])
-        m = f" !!! should be {tList[x]}" if a != tList[x] else " ok"
-        print ("\tTest {}: {} ==> {}{}".format(x+1, rList[x], a, m))
+        t2 = toArabic(r)
+        m = "" if t2 == t else "!?!"
+        print ("{}\tConverting {} ==> {} ===> {}".format(m, t, r, t2))
 
 def doUserInput():
-    inputResult = getInput()
+    inputResult = getUserInput()
 
     while inputResult['type'] is not InputType.EXIT:
 
@@ -199,13 +248,14 @@ def doUserInput():
                 val = toRoman(inputResult['value'])
                 print (inputResult['value'],"==>",val)
             
-        inputResult = getInput()
+        inputResult = getUserInput()
 
 
 '''
 Mainline begins here
 '''
 
-doTest()
-#doUserInput() #do all the things
+doTest(20)  # auto-generate tests
+doUserInput()  # let the user try
 
+#doTest([9, 49, 529, 710, 758, 831, 1267, 1438, 1449, 1537, 1538, 2168, 2376, 2772, 3005, 3115, 3160, 3218, 3554, 3722])
